@@ -1,5 +1,5 @@
 /**
- * Copyright © 2018 Open Text.  All Rights Reserved.
+ * Copyright © 2016 Open Text.  All Rights Reserved.
  */
 package com.opentext.otag.sdk.types.v3.settings;
 
@@ -123,6 +123,12 @@ public class Setting extends SDKType implements Serializable {
         this.description = description;
         this.modified = modified;
         this.seqNo = seqNo;
+    }
+
+    public Setting(String key, SettingType type, String value) {
+        this.key = key;
+        this.type = type;
+        this.value = value;
     }
 
     public String getKey() {

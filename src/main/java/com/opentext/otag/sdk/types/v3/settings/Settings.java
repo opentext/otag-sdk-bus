@@ -1,5 +1,5 @@
 /**
- * Copyright © 2018 Open Text.  All Rights Reserved.
+ * Copyright © 2016 Open Text.  All Rights Reserved.
  */
 package com.opentext.otag.sdk.types.v3.settings;
 
@@ -11,7 +11,7 @@ import java.util.List;
 
 public class Settings extends SDKType {
 
-    private List<Setting> settings = new ArrayList<>();
+    private List<Setting> settings;
 
     public Settings(List<Setting> settings) {
         this.settings = settings;

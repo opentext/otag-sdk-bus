@@ -7,17 +7,15 @@
 
     <groupId>com.opentext.otag.sdk.bus</groupId>
     <artifactId>otag-sdk-bus</artifactId>
-    <version>16.5.0-SNAPSHOT</version>
+    <version>16.5.2-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>Open Text AppWorks Gateway Service Developer Kit (SDK)</name>
+    <name>Open Text AppWorks Gateway SDK Event Bus</name>
 
     <description>This module provides a bus on which messages can be passed back and forth (locally) between
         the AppWorks Gateway and services making use of the AppWorks SDK. The module is deployed to the Tomcat
         lib folder, so its centralized static queues can be used for such communication.
     </description>
-
-    <url>https://github.com/opentext/otag-sdk-bus</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -26,49 +24,6 @@
 
         <nexus.base.url>http://appworks-re1.lab.opentext.com:8082/nexus</nexus.base.url>
     </properties>
-
-    <profiles>
-        <!-- We use this profile to sign and upload (deploy) this module to Maven central, you
-        must be authorised to do so -->
-        <profile>
-            <id>deploy-to-central</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-
-            <build>
-                <plugins>
-                    <!-- PGP will need to be setup locally for this to work -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.5</version>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <!-- Used to deploy the plugin to Sonatype (then onto Maven central) -->
-                    <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.3</version>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <serverId>ossrh</serverId>
-                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                            <autoReleaseAfterClose>false</autoReleaseAfterClose>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 
     <build>
         <resources>
@@ -125,60 +80,13 @@
         </plugins>
     </build>
 
-    <licenses>
-        <license>
-            <name>Open Text End User License Agreement</name>
-            <url>
-                https://developer.opentext.com/awd/resources/articles/15235159/end+user+software+license+agreement+for+open+text+corporation+software
-            </url>
-        </license>
-        <license>
-            <name>Trial Use Agreement</name>
-            <url>https://developer.opentext.com/awd/resources/articles/15235173/trial+use+agreement</url>
-        </license>
-    </licenses>
-
-    <developers>
-        <developer>
-            <name>Rhys Evans</name>
-            <email>rhyse@opentext.com</email>
-            <organization>Open Text</organization>
-            <organizationUrl>http://www.opentext.com/</organizationUrl>
-        </developer>
-    </developers>
-
-    <scm>
-        <connection>scm:git:git@github.com:opentext/otag-sdk-bus.git</connection>
-        <developerConnection>scm:git:git@github.com:opentext/otag-sdk-bus.git</developerConnection>
-        <url>git@github.com:opentext/otag-sdk-bus.git</url>
-    </scm>
-
     <dependencies>
+
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
             <version>3.0.1</version>
             <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.10</version>
-        </dependency>
-
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.17</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>1.7.25</version>
-            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -188,21 +96,8 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Fluent assertions -->
-        <dependency>
-            <groupId>org.easytesting</groupId>
-            <artifactId>fest-assert-core</artifactId>
-            <version>2.0M10</version>
-            <scope>test</scope>
-        </dependency>
-        <!--Mocking library-->
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
-            <version>1.10.19</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
+
 
     <distributionManagement>
         <repository>

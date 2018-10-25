@@ -1,75 +1,153 @@
-/**
- * Copyright © 2018 Open Text.  All Rights Reserved.
- */
 package com.opentext.otag.sdk.bus;
 
+import com.opentext.otag.sdk.types.v3.OtagServiceEvent;
+import com.opentext.otag.sdk.types.v3.SDKType;
+import com.opentext.otag.sdk.types.v3.api.SDKResponse;
+import com.opentext.otag.sdk.types.v3.message.*;
+import com.opentext.otag.sdk.types.v4.SdkRequest;
+
+import java.io.Serializable;
 import java.util.Date;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
-/**
- * A serializable class that can wrap SDK request, response and command content so that it can be
- * queued for delivery to some remote consumer. In our case services using the SDK and the supporting
- * AppWorks Gateway may be event producers and consumers depending on the part of the SDK being used.
- */
-public class SdkQueueEvent {
+import static java.util.Optional.of;
+
+public class SdkQueueEvent implements Serializable {
 
     public enum Type {
+        wakeup,
         // a request for some data, or for a recipient to perform some action that the sender expects a response for
         request,
         // a direct response to a request
         response,
+        // an error response
+        error,
         // an event that instruct the recipient to do something, no response required
         command,
         // an instruction to a managed queues consumers to shut down
         terminate
     }
 
+    public enum ClientType { service, agent }
+
     /**
      * Unique identifier for an event,
      */
     private String sdkEventIdentifier;
+
+    private String serviceName;
+
+    /**
+     * The client type tells the Gateway which queue to respond on. The agent and service have separate
+     * response queues.
+     */
+    private ClientType clientType;
+
+    /**
+     * A specific persistence context derived from the web.xml for the service. The Gateway
+     * may be deployed in a multi-tenant fashion, this is the identifier for a tenant.
+     */
+    private String persistenceContext;
 
     /**
      * What is the purpose of this event.
      */
     private Type sdkEventType;
 
-    /**
-     * We need to deserialize this message
-     */
-    private String fullyQualifiedClassName;
-
-    /**
-     * The actual message as a JSON string.
-     */
-    private String sdkEventBody;
-
-    /**
-     * The type of collection contained in the event body (optional). For example, there may be a List of
-     * items in the event body.
-     */
-    private String collectionType;
-
     private final Date timestamp;
 
+    private AccessChangeMessage accessChangeMessage;
+    private AuthRequestMessage authRequestMessage;
+    private EimConnectorUpdateMessage eimConnectorUpdateMessage;
+    private LifecycleChangeMessage lifecycleChangeMessage;
+    private SettingsChangeMessage settingsChangeMessage;
+
+    /**
+     * Sdk object being passed in the message.
+     */
+    private SDKType sdkType;
+
+    private SdkRequest sdkRequest;
+
+    /**
+     * An SDK response.
+     */
+    private SDKResponse sdkResponse;
+
     public SdkQueueEvent() {
+        sdkEventIdentifier = UUID.randomUUID().toString();
+        timestamp = new Date();
+        clientType = ClientType.service;
+    }
+
+    public SdkQueueEvent(String serviceName, String persistenceContext) {
+        this();
+        this.serviceName = serviceName;
+        this.persistenceContext = persistenceContext;
+    }
+
+    public SdkQueueEvent(String sdkEventIdentifier, String serviceName, String persistenceContext) {
+        this.sdkEventIdentifier = sdkEventIdentifier;
+        this.serviceName = serviceName;
+        this.persistenceContext = persistenceContext;
         timestamp = new Date();
     }
 
-    public SdkQueueEvent(Class<?> sdkBodyClazz,
-                         String sdkEventBody,
-                         Type sdkEventType) {
-        this();
-        Objects.requireNonNull(sdkEventBody, "A message body is required");
-        Objects.requireNonNull(sdkBodyClazz, "The message body class is required");
-        Objects.requireNonNull(sdkEventType, "A message type is required");
+    /**
+     * This request is used to start a blocking queues thread.
+     *
+     * @return start taking from the queue event
+     */
+    public static SdkQueueEvent start() {
+        SdkQueueEvent startEvent = new SdkQueueEvent();
+        startEvent.setSdkEventType(Type.wakeup);
+        return startEvent;
+    }
 
-        sdkEventIdentifier = UUID.randomUUID().toString();
+    public static SdkQueueEvent request(SdkRequest<?> request,
+                                        String serviceName,
+                                        String persistenceContext) {
+        SdkQueueEvent event = new SdkQueueEvent(serviceName, persistenceContext);
+        event.setSdkRequest(request);
+        event.setSdkEventType(Type.request);
+        return event;
+    }
 
-        this.fullyQualifiedClassName = sdkBodyClazz.getName();
-        this.sdkEventType = sdkEventType;
-        this.sdkEventBody = sdkEventBody;
+    public static SdkQueueEvent okResponse(SdkQueueEvent request) {
+        return response(new SDKResponse(true), request);
+    }
+
+    public static SdkQueueEvent response(SDKResponse sdkResponse,
+                                         SdkQueueEvent request) {
+        SdkQueueEvent event = new SdkQueueEvent(request.getSdkEventIdentifier(),
+                request.getServiceName(), request.getPersistenceContext());
+        event.setSdkResponse(sdkResponse);
+        event.setSdkEventType(Type.response);
+        event.setClientType(request.getClientType());
+        return event;
+    }
+
+    public static SdkQueueEvent command(OtagMessage commandObject, String serviceName, String persistenceContext) {
+        SdkQueueEvent event = new SdkQueueEvent(serviceName, persistenceContext);
+        event.setSdkEventType(Type.command);
+
+        return event;
+    }
+
+    public static SdkQueueEvent error(SDKResponse sdkResponse, String sdkEventIdentifier,
+                                      String serviceName, String persistenceContext) {
+        SdkQueueEvent event = new SdkQueueEvent(serviceName, persistenceContext);
+        event.setSdkEventIdentifier(sdkEventIdentifier);
+        event.setSdkResponse(sdkResponse);
+        event.setSdkEventType(Type.error);
+        return event;
+    }
+
+    public static SdkQueueEvent error(SDKResponse sdkResponse, SdkQueueEvent request) {
+        return error(sdkResponse, request.getSdkEventIdentifier(),
+                request.getServiceName(), request.getPersistenceContext());
     }
 
     /**
@@ -83,6 +161,32 @@ public class SdkQueueEvent {
         return event;
     }
 
+    public static <T> Optional<T> extractBodyFromRequest(SdkQueueEvent sdkEvent,
+                                                         Class<T> bodyType) {
+        SdkRequest sdkRequest = sdkEvent.getSdkRequest();
+        if (sdkRequest != null) {
+            Object requestBody = sdkRequest.getRequestBody();
+            if (bodyType.isInstance(requestBody)) {
+                return of(bodyType.cast(requestBody));
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    public static <T> Optional<T> extractBodyFromResponse(SdkQueueEvent sdkEvent,
+                                                          Class<T> bodyType) {
+        SDKResponse sdkResponse = sdkEvent.getSdkResponse();
+        if (sdkResponse != null) {
+            Object requestBody = sdkResponse.getResponseBody();
+            if (bodyType.isInstance(requestBody)) {
+                return of(bodyType.cast(requestBody));
+            }
+        }
+
+        return Optional.empty();
+    }
+
     public String getSdkEventIdentifier() {
         return sdkEventIdentifier;
     }
@@ -91,12 +195,12 @@ public class SdkQueueEvent {
         this.sdkEventIdentifier = sdkEventIdentifier;
     }
 
-    public String getFullyQualifiedClassName() {
-        return fullyQualifiedClassName;
+    public String getServiceName() {
+        return serviceName;
     }
 
-    public void setFullyQualifiedClassName(String fullyQualifiedClassName) {
-        this.fullyQualifiedClassName = fullyQualifiedClassName;
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
     }
 
     public Type getSdkEventType() {
@@ -107,64 +211,190 @@ public class SdkQueueEvent {
         this.sdkEventType = sdkEventType;
     }
 
-    public String getSdkEventBody() {
-        return sdkEventBody;
+    public SDKType getSdkType() {
+        return sdkType;
     }
 
-    public void setSdkEventBody(String sdkEventBody) {
-        this.sdkEventBody = sdkEventBody;
+    public void setSdkType(SDKType sdkType) {
+        this.sdkType = sdkType;
+    }
+
+    public ClientType getClientType() {
+        return clientType;
+    }
+
+    public void setClientType(ClientType clientType) {
+        this.clientType = clientType;
+    }
+
+    public SDKResponse getSdkResponse() {
+        return sdkResponse;
+    }
+
+    public void setSdkResponse(SDKResponse sdkResponse) {
+        this.sdkResponse = sdkResponse;
     }
 
     public Date getTimestamp() {
         return timestamp;
     }
 
-    public String getCollectionType() {
-        return collectionType;
+    public SdkRequest getSdkRequest() {
+        return sdkRequest;
     }
 
-    public void setCollectionType(String collectionType) {
-        this.collectionType = collectionType;
+    public void setSdkRequest(SdkRequest sdkRequest) {
+        this.sdkRequest = sdkRequest;
     }
 
-    public boolean commandLikeEvent() {
-        return Type.command == sdkEventType;
+    public AccessChangeMessage getAccessChangeMessage() {
+        return accessChangeMessage;
     }
 
-    public boolean requestLikeEvent() {
-        return Type.request == sdkEventType;
+    public void setAccessChangeMessage(AccessChangeMessage accessChangeMessage) {
+        this.accessChangeMessage = accessChangeMessage;
     }
 
-    public boolean responseLikeEvent() {
-        return Type.response == sdkEventType;
+    public AuthRequestMessage getAuthRequestMessage() {
+        return authRequestMessage;
+    }
+
+    public void setAuthRequestMessage(AuthRequestMessage authRequestMessage) {
+        this.authRequestMessage = authRequestMessage;
+    }
+
+    public EimConnectorUpdateMessage getEimConnectorUpdateMessage() {
+        return eimConnectorUpdateMessage;
+    }
+
+    public void setEimConnectorUpdateMessage(EimConnectorUpdateMessage eimConnectorUpdateMessage) {
+        this.eimConnectorUpdateMessage = eimConnectorUpdateMessage;
+    }
+
+    public LifecycleChangeMessage getLifecycleChangeMessage() {
+        return lifecycleChangeMessage;
+    }
+
+    public void setLifecycleChangeMessage(LifecycleChangeMessage lifecycleChangeMessage) {
+        this.lifecycleChangeMessage = lifecycleChangeMessage;
+    }
+
+    public SettingsChangeMessage getSettingsChangeMessage() {
+        return settingsChangeMessage;
+    }
+
+    public void setSettingsChangeMessage(SettingsChangeMessage settingsChangeMessage) {
+        this.settingsChangeMessage = settingsChangeMessage;
+    }
+
+    /**
+     * Get the destination endpoint id, if defined.
+     *
+     * @return request endpoint id
+     */
+    public String getDestination() {
+        return sdkRequest == null ? "" : sdkRequest.getEndpointId() == null ? "" : sdkRequest.getEndpointId();
+    }
+
+    /**
+     * Services can be deployed for more than one tenant so we need to specify the persistence context too.
+     * It can be read from the services web.xml file.
+     *
+     * @param serviceName        service name
+     * @param persistenceContext persistence context name
+     * @return true if this event is for this service instance
+     */
+    public boolean isForService(String serviceName, String persistenceContext) {
+        return Objects.equals(this.serviceName, serviceName) &&
+                Objects.equals(this.persistenceContext, persistenceContext);
+    }
+
+    public OtagServiceEvent getOtagServiceEvent() {
+        if (accessChangeMessage != null) {
+            return accessChangeMessage.getEvent();
+        }
+        if (authRequestMessage != null) {
+            return authRequestMessage.getEvent();
+        }
+        if (eimConnectorUpdateMessage != null) {
+            return eimConnectorUpdateMessage.getEvent();
+        }
+        if (lifecycleChangeMessage != null) {
+            return lifecycleChangeMessage.getEvent();
+        }
+        if (settingsChangeMessage != null) {
+            return settingsChangeMessage.getEvent();
+        }
+
+        return null;
+
+    }
+
+    public boolean isRequest() {
+        return Type.request == sdkEventType && sdkRequest != null && sdkRequest.getEndpointId() != null;
+    }
+
+    public boolean isCommand() {
+        return Type.command == sdkEventType && getOtagServiceEvent() != null;
+    }
+
+    public boolean isError() {
+        return Type.error == sdkEventType;
+    }
+
+    public boolean isTerminationCommand() {
+        return Type.terminate == sdkEventType;
+    }
+
+    public boolean isFromService() {
+        return ClientType.service == clientType;
+    }
+
+    public boolean isFromAgent() {
+        return ClientType.agent == clientType;
+    }
+
+    public String getPersistenceContext() {
+        return persistenceContext;
+    }
+
+    public void setPersistenceContext(String persistenceContext) {
+        this.persistenceContext = persistenceContext;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        SdkQueueEvent that = (SdkQueueEvent) o;
-        return Objects.equals(sdkEventIdentifier, that.sdkEventIdentifier) &&
-                Objects.equals(fullyQualifiedClassName, that.fullyQualifiedClassName) &&
-                sdkEventType == that.sdkEventType &&
-                Objects.equals(sdkEventBody, that.sdkEventBody);
+        SdkQueueEvent event = (SdkQueueEvent) o;
+        return Objects.equals(sdkEventIdentifier, event.sdkEventIdentifier) &&
+                Objects.equals(serviceName, event.serviceName) &&
+                Objects.equals(persistenceContext, event.persistenceContext) &&
+                sdkEventType == event.sdkEventType;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(sdkEventIdentifier, sdkEventType);
+        return Objects.hash(sdkEventIdentifier, serviceName, persistenceContext, sdkEventType);
     }
 
     @Override
     public String toString() {
         return "SdkQueueEvent{" +
                 "sdkEventIdentifier='" + sdkEventIdentifier + '\'' +
+                ", serviceName='" + serviceName + '\'' +
+                ", clientType=" + clientType +
+                ", persistenceContext='" + persistenceContext + '\'' +
                 ", sdkEventType=" + sdkEventType +
-                ", fullyQualifiedClassName='" + fullyQualifiedClassName + '\'' +
-                ", sdkEventBody='" + sdkEventBody + '\'' +
-                ", collectionType='" + collectionType + '\'' +
                 ", timestamp=" + timestamp +
+                ", accessChangeMessage=" + accessChangeMessage +
+                ", authRequestMessage=" + authRequestMessage +
+                ", eimConnectorUpdateMessage=" + eimConnectorUpdateMessage +
+                ", lifecycleChangeMessage=" + lifecycleChangeMessage +
+                ", settingsChangeMessage=" + settingsChangeMessage +
+                ", sdkType=" + sdkType +
+                ", sdkRequest=" + sdkRequest +
+                ", sdkResponse=" + sdkResponse +
                 '}';
     }
-
 }

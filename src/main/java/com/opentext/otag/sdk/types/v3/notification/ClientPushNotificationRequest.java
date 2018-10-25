@@ -1,5 +1,5 @@
 /**
- * Copyright © 2018 Open Text.  All Rights Reserved.
+ * Copyright © 2016 Open Text.  All Rights Reserved.
  */
 package com.opentext.otag.sdk.types.v3.notification;
 
@@ -101,6 +101,8 @@ public class ClientPushNotificationRequest implements Serializable {
      */
     private Map<String, Object> data = new HashMap<>();
 
+    private Geofence geofence;
+
     // required for serialization
     @SuppressWarnings("unused")
     public ClientPushNotificationRequest() {
@@ -115,6 +117,7 @@ public class ClientPushNotificationRequest implements Serializable {
         title = builder.title;
         summary = builder.summary;
         data = builder.data;
+        geofence = builder.geofence;
     }
 
     public Set<String> getClientIds() {
@@ -149,12 +152,22 @@ public class ClientPushNotificationRequest implements Serializable {
         return data;
     }
 
+
+    public Geofence getGeofence() {
+        return geofence;
+    }
+
+    public void setGeofence(Geofence geofence) {
+        this.geofence = geofence;
+    }
+
     public static final class Builder {
         private boolean broadcast;
         private Set<String> clientIds;
         private Set<String> users;
         private Set<String> otdsGroups;
         private Set<String> runtimes;
+        private Geofence geofence;
 
         private String title;
         private String summary;
@@ -222,6 +235,11 @@ public class ClientPushNotificationRequest implements Serializable {
 
         public Builder addRuntime(String value) {
             this.runtimes.add(value);
+            return this;
+        }
+
+        public Builder geofence(Geofence geofence) {
+            this.geofence = geofence;
             return this;
         }
 

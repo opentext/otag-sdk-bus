@@ -1,5 +1,5 @@
 /**
- * Copyright © 2018 Open Text.  All Rights Reserved.
+ * Copyright © 2016 Open Text.  All Rights Reserved.
  */
 package com.opentext.otag.sdk.types.v3.api.error;
 
@@ -15,6 +15,14 @@ import com.opentext.otag.sdk.util.StringUtil;
 public class APIException extends RuntimeException {
 
     private SDKCallInfo callInfo;
+
+    public APIException(String message) {
+        super(message);
+    }
+
+    public APIException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
     public APIException(SDKCallInfo callInfo) {
         this.callInfo = callInfo;

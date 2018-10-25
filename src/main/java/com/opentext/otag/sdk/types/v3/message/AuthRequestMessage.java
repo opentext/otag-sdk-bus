@@ -1,5 +1,5 @@
 /**
- * Copyright © 2018 Open Text.  All Rights Reserved.
+ * Copyright © 2016 Open Text.  All Rights Reserved.
  */
 package com.opentext.otag.sdk.types.v3.message;
 
@@ -7,7 +7,7 @@ import com.opentext.otag.sdk.types.v3.OtagServiceEvent;
 import com.opentext.otag.sdk.types.v3.client.ClientRepresentation;
 import com.opentext.otag.sdk.util.ForwardHeaders;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -22,7 +22,8 @@ import java.util.Set;
 public class AuthRequestMessage extends OtagMessageImpl {
 
     public static final HashSet<OtagServiceEvent> AUTH_EVENTS =
-            new HashSet<>(Collections.singletonList(OtagServiceEvent.AUTH_REQUEST));
+            new HashSet<>(Arrays.asList(OtagServiceEvent.AUTH_REQUEST,
+                    OtagServiceEvent.DECORATE_AUTH_RESPONSE));
 
     /**
      * The unique identifier of the handler we wish to fulfil the request.
@@ -43,12 +44,11 @@ public class AuthRequestMessage extends OtagMessageImpl {
     }
 
     public static AuthRequestMessage authByCredsMsg(String handlerName,
-                                                    OtagServiceEvent otagServiceEvent,
                                                     String username,
                                                     String password,
                                                     ForwardHeaders forwardHeaders,
                                                     ClientRepresentation clientData) {
-        AuthRequestMessage message = new AuthRequestMessage(otagServiceEvent);
+        AuthRequestMessage message = new AuthRequestMessage(OtagServiceEvent.AUTH_REQUEST);
         message.username = username;
         message.handlerName = handlerName;
         message.password = password;
@@ -58,11 +58,10 @@ public class AuthRequestMessage extends OtagMessageImpl {
     }
 
     public static AuthRequestMessage authByTokenMsg(String handlerName,
-                                                    OtagServiceEvent otagServiceEvent,
                                                     String authToken,
                                                     ForwardHeaders forwardHeaders,
                                                     ClientRepresentation clientData) {
-        AuthRequestMessage message = new AuthRequestMessage(otagServiceEvent);
+        AuthRequestMessage message = new AuthRequestMessage(OtagServiceEvent.AUTH_REQUEST);
         message.handlerName = handlerName;
         message.authToken = authToken;
         message.forwardHeaders = forwardHeaders;
@@ -70,12 +69,23 @@ public class AuthRequestMessage extends OtagMessageImpl {
         return message;
     }
 
-    public static AuthRequestMessage decorateByCreds(OtagServiceEvent otagServiceEvent,
-                                                     String username,
+    public static AuthRequestMessage authByOtdsMsg(String handlerName,
+                                                   String otdsTicket,
+                                                   ForwardHeaders forwardHeaders,
+                                                   ClientRepresentation clientData) {
+        AuthRequestMessage message = new AuthRequestMessage(OtagServiceEvent.AUTH_REQUEST);
+        message.handlerName = handlerName;
+        message.authToken = otdsTicket;
+        message.forwardHeaders = forwardHeaders;
+        message.clientData = clientData;
+        return message;
+    }
+
+    public static AuthRequestMessage decorateByCreds(String username,
                                                      String password,
                                                      ForwardHeaders forwardHeaders,
                                                      ClientRepresentation clientData) {
-        AuthRequestMessage message = new AuthRequestMessage(otagServiceEvent);
+        AuthRequestMessage message = new AuthRequestMessage(OtagServiceEvent.DECORATE_AUTH_RESPONSE);
         message.username = username;
         message.password = password;
         message.forwardHeaders = forwardHeaders;
@@ -83,11 +93,10 @@ public class AuthRequestMessage extends OtagMessageImpl {
         return message;
     }
 
-    public static AuthRequestMessage decorateByAuthToken(OtagServiceEvent otagServiceEvent,
-                                                    String authToken,
-                                                    ForwardHeaders forwardHeaders,
-                                                    ClientRepresentation clientData) {
-        AuthRequestMessage message = new AuthRequestMessage(otagServiceEvent);
+    public static AuthRequestMessage decorateByAuthToken(String authToken,
+                                                         ForwardHeaders forwardHeaders,
+                                                         ClientRepresentation clientData) {
+        AuthRequestMessage message = new AuthRequestMessage(OtagServiceEvent.DECORATE_AUTH_RESPONSE);
         message.authToken = authToken;
         message.forwardHeaders = forwardHeaders;
         message.clientData = clientData;

@@ -1,5 +1,5 @@
 /**
- * Copyright © 2018 Open Text.  All Rights Reserved.
+ * Copyright © 2016 Open Text.  All Rights Reserved.
  */
 package com.opentext.otag.sdk.types.v3;
 
@@ -10,7 +10,7 @@ import java.util.List;
 
 public class TrustedProviders extends SDKType {
 
-    private List<TrustedProvider> trustedProviders = new ArrayList<>();
+    private List<TrustedProvider> trustedProviders;
 
     public TrustedProviders() {}
 
@@ -27,4 +27,7 @@ public class TrustedProviders extends SDKType {
         return trustedProviders;
     }
 
+    public void setTrustedProviders(List<TrustedProvider> trustedProviders) {
+        this.trustedProviders = trustedProviders;
+    }
 }

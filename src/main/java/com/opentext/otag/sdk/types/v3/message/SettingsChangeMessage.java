@@ -1,5 +1,5 @@
 /**
- * Copyright © 2018 Open Text.  All Rights Reserved.
+ * Copyright © 2016 Open Text.  All Rights Reserved.
  */
 package com.opentext.otag.sdk.types.v3.message;
 
@@ -28,6 +28,11 @@ public class SettingsChangeMessage extends OtagMessageImpl {
     public SettingsChangeMessage() {
     }
 
+    public SettingsChangeMessage(String key, String newValue) {
+        this.key = key;
+        this.newValue = newValue;
+    }
+
     public SettingsChangeMessage(OtagServiceEvent event, String key, String newValue) {
         super(event);
         this.key = key;
@@ -43,8 +48,16 @@ public class SettingsChangeMessage extends OtagMessageImpl {
         return key;
     }
 
+    public void setKey(String key) {
+        this.key = key;
+    }
+
     public String getNewValue() {
         return newValue;
+    }
+
+    public void setNewValue(String newValue) {
+        this.newValue = newValue;
     }
 
     @Override
