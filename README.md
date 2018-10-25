@@ -1,23 +1,28 @@
-# Open Text AppWorks service development kit
+# Open Text AppWorks service development kit bus
 
-The service development kit (SDK) provides access to the set of utility classes required to interact with an instance of an AppWorks Gateway from an AppWorks Service. It covers AppWorks dedicated service deployment API, which is a limited subset of the full AppWorks administration API.
-
-The SDK currently provides the following features:
-
-- Full set of REST clients for working with the AppWorks Gateway's deployments API
-- Centralised configuration setting management (creation, update, handling changes from the AppWorks Gateway console)
-- Handling of service life-cycle events such as 'service installed', 'service upgraded' and 'service uninstalled'
-- EIM connector and custom authentication response decoration
+The service development kit (SDK) event bus provides access to the set of domain classes required to interact
+ with an instance of an AppWorks Gateway from an AppWorks Service. These classes are used by the AppWorks 
+ service development kit (https://github.com/opentext/otag-service-development-kit) to make use of the functionality
+ the hosting Gateway provides. This module also provides a centralised non-blocking event bus, managed by the Gateway.
+ 
+ Please include it in the dependencies of AppWorks Services that are to be deployed to the AppWorks 16.5.0 
+ (or later) Gateway as follows. It should be marked as provided (i.e. not included in the final service zip) else 
+ communication between the service and Gateway will fail.
+ 
+ ```xml
+<dependency>
+    <groupId>com.opentext.otag.sdk.bus</groupId>
+    <artifactId>otag-sdk-bus</artifactId>
+    <version>16.5.0</version>
+    <scope>provided</scope>
+</dependency>
+```
 
 # Documentation
 
 The SDK documentation is hosted over at the AppWorks developer portal, it can be found at the following location:
 
 <https://developer.opentext.com/awd/resources/articles/15239948/developer+guide+opentext+appworks+16+service+development+kit>
-
-For further information regarding AppWorks 16 push notifications the following article is also available.
-
-<https://developer.opentext.com/awd/resources/articles/15239965/developer+guide+opentext+appworks+16+notifications>
 
 # License
 
