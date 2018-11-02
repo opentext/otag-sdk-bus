@@ -17,6 +17,8 @@
         lib folder, so its centralized static queues can be used for such communication.
     </description>
 
+    <url>https://github.com/opentext/otag-sdk-bus</url>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jackson.version>2.9.5</jackson.version>
@@ -121,13 +123,60 @@
         </plugins>
     </build>
 
-    <dependencies>
+    <licenses>
+        <license>
+            <name>Open Text End User License Agreement</name>
+            <url>
+                https://developer.opentext.com/awd/resources/articles/15235159/end+user+software+license+agreement+for+open+text+corporation+software
+            </url>
+        </license>
+        <license>
+            <name>Trial Use Agreement</name>
+            <url>https://developer.opentext.com/awd/resources/articles/15235173/trial+use+agreement</url>
+        </license>
+    </licenses>
 
+    <developers>
+        <developer>
+            <name>Rhys Evans</name>
+            <email>rhyse@opentext.com</email>
+            <organization>Open Text</organization>
+            <organizationUrl>http://www.opentext.com/</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git@github.com:opentext/otag-sdk-bus.git</connection>
+        <developerConnection>scm:git:git@github.com:opentext/otag-sdk-bus.git</developerConnection>
+        <url>git@github.com:opentext/otag-sdk-bus.git</url>
+    </scm>
+
+    <dependencies>
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
             <version>3.0.1</version>
             <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.10</version>
+        </dependency>
+
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.17</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.25</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
