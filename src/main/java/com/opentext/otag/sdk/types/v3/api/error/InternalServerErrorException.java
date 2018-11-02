@@ -28,4 +28,8 @@ public class InternalServerErrorException extends APIException {
             throw new IllegalArgumentException("We didn't receive SDK Call info relating to a 500 INTERNAL SERVER ERROR?");
     }
 
+    @Override
+    public String toString() {
+        return "InternalServerErrorException{} " + super.toString();
+    }
 }

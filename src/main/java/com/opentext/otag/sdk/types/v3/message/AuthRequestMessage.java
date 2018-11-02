@@ -141,4 +141,12 @@ public class AuthRequestMessage extends OtagMessageImpl {
         return clientData;
     }
 
+    @Override
+    public String toString() {
+        return "AuthRequestMessage{" +
+                "handlerName='" + handlerName + '\'' +
+                ", username='" + username + '\'' +
+                ", clientData=" + clientData +
+                "} " + super.toString();
+    }
 }

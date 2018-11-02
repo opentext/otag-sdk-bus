@@ -30,4 +30,8 @@ public class LifecycleChangeMessage extends OtagMessageImpl {
         return LIFE_CYCLE_EVENTS;
     }
 
+    @Override
+    public String toString() {
+        return "LifecycleChangeMessage{} " + super.toString();
+    }
 }

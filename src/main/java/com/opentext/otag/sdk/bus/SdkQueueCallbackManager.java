@@ -95,7 +95,7 @@ public class SdkQueueCallbackManager {
 
         // we do not want to return null to our consumers ever
         if (returnEvent == null) {
-            String errString = "SDK request for event " + eventId + "timed out awaiting a response";
+            String errString = "SDK request for event " + eventId + " timed out awaiting a response";
             SdkEventBusLog.error(errString);
             throw new APIException(errString, new SDKCallInfo());
         }

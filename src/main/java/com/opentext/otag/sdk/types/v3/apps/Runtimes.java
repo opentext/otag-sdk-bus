@@ -7,6 +7,9 @@ import com.opentext.otag.sdk.types.v3.SDKType;
 import com.opentext.otag.sdk.types.v3.api.SDKCallInfo;
 
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.opentext.otag.sdk.util.StringUtil.toListString;
 
 public class Runtimes extends SDKType {
 
@@ -29,4 +32,11 @@ public class Runtimes extends SDKType {
         this.runtimes = runtimes;
     }
 
+    @Override
+    public String toString() {
+        return "Runtimes{" +
+                "runtimes=" + (runtimes != null ? toListString(
+                        runtimes.stream().map(Runtime::toString).collect(Collectors.toSet())) : "{}") +
+                "} " + super.toString();
+    }
 }

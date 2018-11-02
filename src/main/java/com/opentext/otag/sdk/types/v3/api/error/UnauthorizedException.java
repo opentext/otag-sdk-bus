@@ -27,4 +27,8 @@ public class UnauthorizedException extends APIException {
             throw new IllegalArgumentException("We didn't receive SDK Call info relating to a 401 UNAUTHORIZED?");
     }
 
+    @Override
+    public String toString() {
+        return "UnauthorizedException{} " + super.toString();
+    }
 }

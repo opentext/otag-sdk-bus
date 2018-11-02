@@ -27,4 +27,8 @@ public class NotFoundException extends APIException {
             throw new IllegalArgumentException("We didn't receive SDK Call info relating to a 404 NOT FOUND?");
     }
 
+    @Override
+    public String toString() {
+        return "NotFoundException{} " + super.toString();
+    }
 }

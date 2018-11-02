@@ -21,4 +21,10 @@ public class AppData implements Serializable {
         return enabled;
     }
 
+    @Override
+    public String toString() {
+        return "AppData{" +
+                "enabled=" + enabled +
+                '}';
+    }
 }

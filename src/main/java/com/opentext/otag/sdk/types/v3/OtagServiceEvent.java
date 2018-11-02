@@ -62,5 +62,11 @@ public enum OtagServiceEvent {
                 this.equals(DECORATE_AUTH_RESPONSE);
     }
 
+    @Override
+    public String toString() {
+        return "OtagServiceEvent{" +
+                "event='" + event + '\'' +
+                "} " + super.toString();
+    }
 }
 

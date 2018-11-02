@@ -3,9 +3,12 @@
  */
 package com.opentext.otag.sdk.types.v3.auth;
 
+import com.opentext.otag.sdk.util.StringUtil;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class AuthHandlerResults implements Serializable {
 
@@ -22,4 +25,11 @@ public class AuthHandlerResults implements Serializable {
         return results;
     }
 
+    @Override
+    public String toString() {
+        return "AuthHandlerResults{" +
+                "results=" + (results != null ? StringUtil.toListString(
+                results.stream().map(AuthHandlerResult::toString).collect(Collectors.toSet())) : "{}") +
+                '}';
+    }
 }

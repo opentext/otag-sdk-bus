@@ -27,4 +27,8 @@ public class AccessChangeMessage extends OtagMessageImpl {
         return ACCESS_EVENTS;
     }
 
+    @Override
+    public String toString() {
+        return "AccessChangeMessage{} " + super.toString();
+    }
 }

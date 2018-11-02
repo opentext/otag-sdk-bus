@@ -28,4 +28,8 @@ public class BadRequestException extends APIException {
             throw new IllegalArgumentException("We didn't receive SDK Call info relating to a 400 BAD REQUEST?");
     }
 
+    @Override
+    public String toString() {
+        return "BadRequestException{} " + super.toString();
+    }
 }

@@ -101,4 +101,16 @@ public class Cookie implements Serializable {
         this.comment = comment;
     }
 
+    @Override
+    public String toString() {
+        return "Cookie{" +
+                "name='" + name + '\'' +
+                ", domain='" + domain + '\'' +
+                ", path='" + path + '\'' +
+                ", secure=" + secure +
+                ", httpOnly=" + httpOnly +
+                ", maxAge=" + maxAge +
+                ", comment='" + comment + '\'' +
+                '}';
+    }
 }
