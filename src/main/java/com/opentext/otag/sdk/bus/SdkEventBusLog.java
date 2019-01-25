@@ -34,8 +34,7 @@ public class SdkEventBusLog {
 
     void initializeUsingEnv() {
         try {
-            String envVar = systemEnvironment.getenv(SDK_EVENT_LOGGING_ENV_VAR);
-            writeToLog = Boolean.TRUE.toString().equalsIgnoreCase(envVar);
+            writeToLog = systemEnvironment.getenvBool(SDK_EVENT_LOGGING_ENV_VAR);
         } catch (Exception e) {
             System.err.println("Failed to process SDK Event Bus Logging env var - " +
                     e.getMessage() + " " + e.toString());

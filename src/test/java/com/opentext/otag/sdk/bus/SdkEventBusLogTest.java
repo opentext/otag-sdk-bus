@@ -11,6 +11,7 @@ import java.io.PrintStream;
 
 import static com.opentext.otag.sdk.bus.SdkEventBusLog.SDK_EVENT_LOGGING_ENV_VAR;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -27,7 +28,17 @@ public class SdkEventBusLogTest {
     }
 
     @Test
+    public void itShouldBeTolerantOfQuotedBooleans() {
+        when(envMock.getenvBool(anyString())).thenCallRealMethod();
+        when(envMock.getenv(SDK_EVENT_LOGGING_ENV_VAR)).thenReturn("\"true\"");
+        underTest.initializeUsingEnv();
+
+        assertThat(underTest.isWriteToLog()).isTrue();
+    }
+
+    @Test
     public void itShouldLogIf_true_IsUsedInTheEnvVar() {
+        when(envMock.getenvBool(anyString())).thenCallRealMethod();
         when(envMock.getenv(SDK_EVENT_LOGGING_ENV_VAR)).thenReturn("true");
         underTest.initializeUsingEnv();
 
@@ -36,6 +47,7 @@ public class SdkEventBusLogTest {
 
     @Test
     public void itShouldLogIf_TRUE_IsUsedInTheEnvVar() {
+        when(envMock.getenvBool(anyString())).thenCallRealMethod();
         when(envMock.getenv(SDK_EVENT_LOGGING_ENV_VAR)).thenReturn("TRUE");
         underTest.initializeUsingEnv();
 
@@ -44,6 +56,7 @@ public class SdkEventBusLogTest {
 
     @Test
     public void itShouldNotLogIf_false_IsUsedInTheEnvVar() {
+        when(envMock.getenvBool(anyString())).thenCallRealMethod();
         when(envMock.getenv(SDK_EVENT_LOGGING_ENV_VAR)).thenReturn("false");
         underTest.initializeUsingEnv();
 
@@ -52,6 +65,7 @@ public class SdkEventBusLogTest {
 
     @Test
     public void itShouldNotLogI_FALSE_IsUsedInTheEnvVar() {
+        when(envMock.getenvBool(anyString())).thenCallRealMethod();
         when(envMock.getenv(SDK_EVENT_LOGGING_ENV_VAR)).thenReturn("FALSE");
         underTest.initializeUsingEnv();
 
@@ -85,6 +99,7 @@ public class SdkEventBusLogTest {
     }
 
     private void initStaticInstance() {
+        when(envMock.getenvBool(anyString())).thenCallRealMethod();
         when(envMock.getenv(SDK_EVENT_LOGGING_ENV_VAR)).thenReturn("true");
         underTest.initializeUsingEnv();
 
