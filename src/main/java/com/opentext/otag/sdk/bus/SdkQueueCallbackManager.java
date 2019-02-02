@@ -21,8 +21,10 @@ public class SdkQueueCallbackManager {
     /**
      * SDK callback queues are mapped against their {@link SdkQueueEvent#sdkEventIdentifier}. Once a response
      * is received it is thrown onto the queue. The blocking queue is used by clients of this
+     *
+     * IMPORTANT - leave this static as there is potential for more than one SdkQueueCallbackManager at a time
      */
-    private final Map<String, BlockingQueue<SdkQueueEvent>> CALLBACKS_QUEUES = new ConcurrentHashMap<>();
+    private static final Map<String, BlockingQueue<SdkQueueEvent>> CALLBACKS_QUEUES = new ConcurrentHashMap<>();
 
     /**
      * Is this callback manager being used by a service agent? As opposed to a general SDK client.
@@ -40,13 +42,11 @@ public class SdkQueueCallbackManager {
         responseConsumerFuture = sdkConsumerExecutor.submit(getConsumerRunnable(serviceName, persistenceContext));
     }
 
-    public static SdkQueueCallbackManager serviceCbackManager(String serviceName,
-                                                                 String persistenceContext) {
+    public static SdkQueueCallbackManager serviceCbackManager(String serviceName, String persistenceContext) {
         return new SdkQueueCallbackManager(serviceName, persistenceContext, false);
     }
 
-    public static SdkQueueCallbackManager agentCbackManager(String serviceName,
-                                                                   String persistenceContext) {
+    public static SdkQueueCallbackManager agentCbackManager(String serviceName, String persistenceContext) {
         return new SdkQueueCallbackManager(serviceName, persistenceContext, true);
     }
 
@@ -84,27 +84,41 @@ public class SdkQueueCallbackManager {
     public SdkQueueEvent getResponseForEvent(String eventId) throws InterruptedException {
         // we use the BlockingQueue again here to force the async nature of waiting for
         // the Gateway to respond into a sync one
+        final BlockingQueue<SdkQueueEvent> blockingQueue = CALLBACKS_QUEUES.get(eventId);
+        if (blockingQueue == null) {
+            SdkEventBusLog.error("No queue found for event " + eventId + " please ensure to call prepareForResponse()" +
+                    " prior to sending the outgoing message", new Throwable());
+            return null;
+        }
+        try {
+            // wait for an event to be added to the queue by the consumer for a few seconds
+            SdkQueueEvent returnEvent = blockingQueue.poll(30, TimeUnit.SECONDS);
+
+            // we do not want to return null to our consumers ever
+            if (returnEvent == null) {
+                String errString = "SDK request for event " + eventId + " timed out awaiting a response";
+                SdkEventBusLog.error(errString);
+                throw new APIException(errString, new SDKCallInfo());
+            }
+            return returnEvent;
+        } finally {
+            CALLBACKS_QUEUES.remove(eventId);
+        }
+    }
+
+    /**
+     * Prepares the callback manager for a response.  This *must* be called *prior* to sending the outgoing request
+     * @param eventId the event ID
+     */
+    public void prepareForResponse(String eventId) {
         final BlockingQueue<SdkQueueEvent> blockingQueue = new ArrayBlockingQueue<>(1);
 
         SdkEventBusLog.info("Placing event with id " + eventId + " in the callback queue at:" + new Date());
 
         CALLBACKS_QUEUES.put(eventId, blockingQueue);
-
-        // wait for an event to be added to the queue by the consumer for a few seconds
-        SdkQueueEvent returnEvent = blockingQueue.poll(30, TimeUnit.SECONDS);
-
-        // we do not want to return null to our consumers ever
-        if (returnEvent == null) {
-            String errString = "SDK request for event " + eventId + " timed out awaiting a response";
-            SdkEventBusLog.error(errString);
-            throw new APIException(errString, new SDKCallInfo());
-        }
-
-        CALLBACKS_QUEUES.remove(eventId);
-        return returnEvent;
     }
 
-    private Callable<Object> getConsumerRunnable(String serviceName, String persistenceContext) {
+    private Runnable getConsumerRunnable(String serviceName, String persistenceContext) {
         return () -> {
             SdkEventBusLog.info("Starting SDK queue callback for " + serviceName + " " +
                     (isAgentManager ? "Service Agent" : "Service"));
@@ -113,33 +127,37 @@ public class SdkQueueCallbackManager {
                     SdkQueueManager.getServiceAgentQueue(serviceName, persistenceContext) :
                     SdkQueueManager.getServiceQueue(serviceName, persistenceContext);
 
-            while (true) {
-                String consumerName = ((isAgentManager) ? "AGENT" : "SERVICE") + " CONSUMER";
-                SdkEventBusLog.info("On take loop: " + consumerName);
-                SdkQueueEvent responseEvent = serviceQueue.take();
-                String eventId = responseEvent.getSdkEventIdentifier();
+            while (!SdkQueueManager.isShutdown()) {
+                try {
+                    String consumerName = ((isAgentManager) ? "AGENT" : "SERVICE") + " CONSUMER";
+                    SdkEventBusLog.info("On take loop: " + consumerName);
+                    SdkQueueEvent responseEvent = serviceQueue.take();
+                    String eventId = responseEvent.getSdkEventIdentifier();
 
-                SdkEventBusLog.info(consumerName + ": Got event with id " + eventId + " in the callback queue at:" + new Date());
-                SdkEventBusLog.info(consumerName + ": Got event " + responseEvent + " in the callback queue at:" + new Date());
-                SdkEventBusLog.info(consumerName + ": Callback Queue - " + StringUtil.toListString(CALLBACKS_QUEUES.keySet()) +
-                        " at:" + new Date());
+                    SdkEventBusLog.info(consumerName + ": Got event with id " + eventId + " in the callback queue at:" + new Date());
+                    SdkEventBusLog.info(consumerName + ": Got event " + responseEvent + " in the callback queue at:" + new Date());
+                    SdkEventBusLog.info(consumerName + ": Callback Queue - " + StringUtil.toListString(CALLBACKS_QUEUES.keySet()) +
+                            " at:" + new Date());
 
-                if (CALLBACKS_QUEUES.containsKey(eventId)) {
-                    try {
-                        BlockingQueue<SdkQueueEvent> blockingQueue = CALLBACKS_QUEUES.get(eventId);
-                        SdkEventBusLog.info(consumerName + ": Passing event to callback queue for " + eventId +
-                                " event - " + responseEvent + " - queue size=" + blockingQueue.size());
-                        blockingQueue.add(responseEvent);
-                    } catch (Exception e) {
-                        SdkEventBusLog.info(consumerName + ": Call back for " + eventId + " FAILED!!!, " +
-                                "removing from callbacks: " + e.getMessage() + ":" + e.toString());
-                        CALLBACKS_QUEUES.remove(eventId);
+                    if (CALLBACKS_QUEUES.containsKey(eventId)) {
+                        try {
+                            BlockingQueue<SdkQueueEvent> blockingQueue = CALLBACKS_QUEUES.get(eventId);
+                            SdkEventBusLog.info(consumerName + ": Passing event to callback queue for " + eventId +
+                                    " event - " + responseEvent + " - queue size=" + blockingQueue.size());
+                            blockingQueue.add(responseEvent);
+                        } catch (Exception e) {
+                            SdkEventBusLog.info(consumerName + ": Call back for " + eventId + " FAILED!!!, " +
+                                    "removing from callbacks: " + e.getMessage() + ":" + e.toString());
+                            CALLBACKS_QUEUES.remove(eventId);
+                        }
+                    } else {
+                        SdkEventBusLog.info("Response without a registered callback was received - " + responseEvent);
                     }
-                } else {
-                    SdkEventBusLog.info("Response without a registered callback was received - " + responseEvent);
+                } catch (Throwable t) {
+                    // log and ignore
+                    SdkEventBusLog.error("Ignoring error", t);
                 }
             }
-
         };
     }
 

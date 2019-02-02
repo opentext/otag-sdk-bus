@@ -66,6 +66,10 @@ public class SdkQueueManager {
         instance.stop = true;
     }
 
+    public static boolean isShutdown() {
+        return instance.stop;
+    }
+
     /**
      * Send a request to the Gateway.
      *
@@ -144,7 +148,7 @@ public class SdkQueueManager {
 
         boolean haveEnqueued = false;
         int attempts = 0;
-        while (!haveEnqueued && !stop && (attempts++ < MAX_ENQUEUE_ATTEMPTS)) try {
+        while (!haveEnqueued && !instance.stop && (attempts++ < MAX_ENQUEUE_ATTEMPTS)) try {
             queue.put(toSend);
             haveEnqueued = true;
         } catch (InterruptedException e) {
@@ -167,15 +171,15 @@ public class SdkQueueManager {
     BlockingQueue<SdkQueueEvent> ensureServiceQueue(String serviceName, String persistenceUnit, boolean warnIfMissing) {
         SdkQueueEventId key = new SdkQueueEventId(serviceName, persistenceUnit);
 
-        if (!SERVICES_QUEUES.containsKey(key)) {
+        if (!instance.SERVICES_QUEUES.containsKey(key)) {
             if (warnIfMissing) {
                 SdkEventBusLog.info("We attempted to send an SDK event to an app without a queue, " +
                         "adding a new queue for service " + serviceName);
             }
-            SERVICES_QUEUES.put(key, new LinkedBlockingQueue<>(SERVICE_QUEUE_CAPACITY));
+            instance.SERVICES_QUEUES.put(key, new LinkedBlockingQueue<>(SERVICE_QUEUE_CAPACITY));
         }
 
-        return SERVICES_QUEUES.get(key);
+        return instance.SERVICES_QUEUES.get(key);
     }
 
     BlockingQueue<SdkQueueEvent> ensureServiceAgentQueue(String serviceName,
@@ -183,15 +187,15 @@ public class SdkQueueManager {
                                                          boolean warnIfMissing) {
         SdkQueueEventId key = new SdkQueueEventId(serviceName, persistenceUnit);
 
-        if (!SERVICES_AGENT_QUEUES.containsKey(key)) {
+        if (!instance.SERVICES_AGENT_QUEUES.containsKey(key)) {
             if (warnIfMissing) {
                 SdkEventBusLog.info("We attempted to send an SDK event to an service agent without a queue, " +
                         "adding a new queue for service agent " + serviceName);
             }
-            SERVICES_AGENT_QUEUES.put(key, new LinkedBlockingQueue<>(SERVICE_QUEUE_CAPACITY));
+            instance.SERVICES_AGENT_QUEUES.put(key, new LinkedBlockingQueue<>(SERVICE_QUEUE_CAPACITY));
         }
 
-        return SERVICES_AGENT_QUEUES.get(key);
+        return instance.SERVICES_AGENT_QUEUES.get(key);
     }
 
     BlockingQueue<SdkQueueEvent> ensureServiceCommandQueue(String serviceName,
@@ -199,15 +203,15 @@ public class SdkQueueManager {
                                                            boolean warnIfMissing) {
         SdkQueueEventId key = new SdkQueueEventId(serviceName, persistenceUnit);
 
-        if (!SERVICE_COMMAND_QUEUES.containsKey(key)) {
+        if (!instance.SERVICE_COMMAND_QUEUES.containsKey(key)) {
             if (warnIfMissing) {
                 SdkEventBusLog.info("We attempted to send an SDK event to an app without a queue, " +
                         "adding a new queue for service " + serviceName);
             }
-            SERVICE_COMMAND_QUEUES.put(key, new LinkedBlockingQueue<>(SERVICE_QUEUE_CAPACITY));
+            instance.SERVICE_COMMAND_QUEUES.put(key, new LinkedBlockingQueue<>(SERVICE_QUEUE_CAPACITY));
         }
 
-        return SERVICE_COMMAND_QUEUES.get(key);
+        return instance.SERVICE_COMMAND_QUEUES.get(key);
     }
 
     public static BlockingQueue<SdkQueueEvent> getGatewayQueue() {

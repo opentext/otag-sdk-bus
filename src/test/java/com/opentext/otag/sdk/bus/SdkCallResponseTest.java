@@ -58,7 +58,7 @@ public class SdkCallResponseTest extends SdkBusTester {
         return () -> {
             LOG.log(Level.INFO, "SERVICE thread");
 
-            while (true) {
+            while (!SdkQueueManager.isShutdown()) {
                 try {
                     SdkQueueEvent fromOtag = SERVICE_QUEUE.take();
                     LOG.log(Level.INFO, "Take off SERVICE_QUEUE, got - " + fromOtag);
@@ -80,8 +80,9 @@ public class SdkCallResponseTest extends SdkBusTester {
                         countDownLatch.countDown();
                     }
 
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                } catch (Throwable t) {
+                    // log and ignore
+                    SdkEventBusLog.error("Ignoring error", t);
                 }
             }
 
@@ -100,7 +101,7 @@ public class SdkCallResponseTest extends SdkBusTester {
     private Runnable getGatewayRunnable() {
         return () -> {
             LOG.log(Level.INFO, "GATEWAY thread");
-            while (true) {
+            while (!SdkQueueManager.isShutdown()) {
                 try {
                     SdkQueueEvent toOtag = GATEWAY_QUEUE.take();
                     LOG.log(Level.INFO, "Take off GATEWAY_QUEUE, got - " + toOtag);
@@ -130,8 +131,9 @@ public class SdkCallResponseTest extends SdkBusTester {
                         SdkQueueEvent settingsResponse = SdkQueueEvent.response(new SDKResponse(true, settings), toOtag);
                         SERVICE_QUEUE.put(settingsResponse);
                     }
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                } catch (Throwable t) {
+                    // log and ignore
+                    SdkEventBusLog.error("Ignoring error", t);
                 }
             }
         };

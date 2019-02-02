@@ -62,6 +62,7 @@ public class SdkEventBusLog {
                 error.getClass().getSimpleName(), errString);
         if (canWriteToLog()) {
             System.err.println(err);
+            error.printStackTrace();
         }
     }
 
