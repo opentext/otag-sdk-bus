@@ -171,14 +171,15 @@ public class SdkQueueManager {
     BlockingQueue<SdkQueueEvent> ensureServiceQueue(String serviceName, String persistenceUnit, boolean warnIfMissing) {
         SdkQueueEventId key = new SdkQueueEventId(serviceName, persistenceUnit);
 
-        if (!instance.SERVICES_QUEUES.containsKey(key)) {
-            if (warnIfMissing) {
-                SdkEventBusLog.info("We attempted to send an SDK event to an app without a queue, " +
-                        "adding a new queue for service " + serviceName);
+        synchronized (instance.SERVICES_QUEUES) {
+            if (!instance.SERVICES_QUEUES.containsKey(key)) {
+                if (warnIfMissing) {
+                    SdkEventBusLog.info("We attempted to send an SDK event to an app without a queue, " +
+                            "adding a new queue for service " + serviceName);
+                }
+                instance.SERVICES_QUEUES.put(key, new LinkedBlockingQueue<>(SERVICE_QUEUE_CAPACITY));
             }
-            instance.SERVICES_QUEUES.put(key, new LinkedBlockingQueue<>(SERVICE_QUEUE_CAPACITY));
         }
-
         return instance.SERVICES_QUEUES.get(key);
     }
 
@@ -187,14 +188,15 @@ public class SdkQueueManager {
                                                          boolean warnIfMissing) {
         SdkQueueEventId key = new SdkQueueEventId(serviceName, persistenceUnit);
 
-        if (!instance.SERVICES_AGENT_QUEUES.containsKey(key)) {
-            if (warnIfMissing) {
-                SdkEventBusLog.info("We attempted to send an SDK event to an service agent without a queue, " +
-                        "adding a new queue for service agent " + serviceName);
+        synchronized (instance.SERVICES_AGENT_QUEUES) {
+            if (!instance.SERVICES_AGENT_QUEUES.containsKey(key)) {
+                if (warnIfMissing) {
+                    SdkEventBusLog.info("We attempted to send an SDK event to an service agent without a queue, " +
+                            "adding a new queue for service agent " + serviceName);
+                }
+                instance.SERVICES_AGENT_QUEUES.put(key, new LinkedBlockingQueue<>(SERVICE_QUEUE_CAPACITY));
             }
-            instance.SERVICES_AGENT_QUEUES.put(key, new LinkedBlockingQueue<>(SERVICE_QUEUE_CAPACITY));
         }
-
         return instance.SERVICES_AGENT_QUEUES.get(key);
     }
 
@@ -203,14 +205,15 @@ public class SdkQueueManager {
                                                            boolean warnIfMissing) {
         SdkQueueEventId key = new SdkQueueEventId(serviceName, persistenceUnit);
 
-        if (!instance.SERVICE_COMMAND_QUEUES.containsKey(key)) {
-            if (warnIfMissing) {
-                SdkEventBusLog.info("We attempted to send an SDK event to an app without a queue, " +
-                        "adding a new queue for service " + serviceName);
+        synchronized (instance.SERVICE_COMMAND_QUEUES) {
+            if (!instance.SERVICE_COMMAND_QUEUES.containsKey(key)) {
+                if (warnIfMissing) {
+                    SdkEventBusLog.info("We attempted to send an SDK event to an app without a queue, " +
+                            "adding a new queue for service " + serviceName);
+                }
+                instance.SERVICE_COMMAND_QUEUES.put(key, new LinkedBlockingQueue<>(SERVICE_QUEUE_CAPACITY));
             }
-            instance.SERVICE_COMMAND_QUEUES.put(key, new LinkedBlockingQueue<>(SERVICE_QUEUE_CAPACITY));
         }
-
         return instance.SERVICE_COMMAND_QUEUES.get(key);
     }
 

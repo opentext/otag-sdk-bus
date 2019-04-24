@@ -127,7 +127,7 @@ public class SdkQueueCallbackManager {
                     SdkQueueManager.getServiceAgentQueue(serviceName, persistenceContext) :
                     SdkQueueManager.getServiceQueue(serviceName, persistenceContext);
 
-            while (!SdkQueueManager.isShutdown()) {
+            while (!SdkQueueManager.isShutdown() && !(Thread.currentThread().isInterrupted())) {
                 try {
                     String consumerName = ((isAgentManager) ? "AGENT" : "SERVICE") + " CONSUMER";
                     SdkEventBusLog.info("On take loop: " + consumerName);
@@ -153,9 +153,16 @@ public class SdkQueueCallbackManager {
                     } else {
                         SdkEventBusLog.info("Response without a registered callback was received - " + responseEvent);
                     }
-                } catch (Throwable t) {
-                    // log and ignore
-                    SdkEventBusLog.error("Ignoring error", t);
+                }
+                catch (Throwable t) {
+                    if (t instanceof InterruptedException) {
+                        SdkEventBusLog.info("Closing down");
+                        SdkQueueManager.shutdown();
+                        Thread.currentThread().interrupt();
+                    } else {
+                        // log and ignore
+                        SdkEventBusLog.error("Ignoring error", t);
+                    }
                 }
             }
         };
