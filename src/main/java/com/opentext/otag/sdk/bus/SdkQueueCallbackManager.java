@@ -156,8 +156,7 @@ public class SdkQueueCallbackManager {
                 }
                 catch (Throwable t) {
                     if (t instanceof InterruptedException) {
-                        SdkEventBusLog.info("Closing down");
-                        SdkQueueManager.shutdown();
+                        SdkEventBusLog.info("Closing down " + serviceName);
                         Thread.currentThread().interrupt();
                     } else {
                         // log and ignore
